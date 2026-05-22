@@ -3,8 +3,8 @@
 #include <ESP32Servo.h>
 
 // ---------- WIFI ----------
-const char* ssid = "YOUR_WIFI_NAME";
-const char* password = "YOUR_WIFI_PASSWORD";
+const char* ssid = "VIRGIN861";
+const char* password = "5E1426DF4D16";
 
 // ---------- SERVER ----------
 WebServer server(80);
@@ -13,7 +13,7 @@ WebServer server(80);
 Servo myServo;
 #define SERVO_PIN 12   // try GPIO13 if GPIO12 fails
 
-// Move servo ON
+// Move servo ON  
 void handleOn() {
   myServo.write(90);
   server.send(200, "text/plain", "Servo ON");

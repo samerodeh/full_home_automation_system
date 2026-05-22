@@ -1,0 +1,7 @@
+toggle_bedroom_light:
+  description: Toggle bedroom light via MQTT relay
+  sequence:
+    - service: mqtt.publish
+      data:
+        topic: home/bedroom/light/set
+        payload: "on"

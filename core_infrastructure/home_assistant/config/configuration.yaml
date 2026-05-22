@@ -1,0 +1,22 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+mqtt:
+  switch:
+    - name: "Bedroom Light"
+      unique_id: bedroom_light
+      command_topic: "home/bedroom/light/set"
+      state_topic: "home/bedroom/light/state"
+      payload_on: "ON"
+      payload_off: "OFF"
+      optimistic: false
+      qos: 1
+      retain: false
