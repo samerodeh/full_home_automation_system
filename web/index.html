@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Automation</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #111;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        h1 { font-size: 1.4rem; font-weight: 500; margin-bottom: 6px; color: #aaa; }
+
+        #mqtt-status { font-size: 0.8rem; color: #555; margin-bottom: 32px; }
+        #mqtt-status.connected { color: #4caf50; }
+        #mqtt-status.error     { color: #f44336; }
+
+        .rooms { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 420px; }
+
+        .device {
+            background: #1e1e1e;
+            border-radius: 16px;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .device-name  { font-size: 1rem; font-weight: 500; }
+        .device-room  { font-size: 0.78rem; color: #666; margin-top: 2px; }
+
+        .btns { display: flex; gap: 8px; }
+
+        button {
+            background: #2a2a2a;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 11px 20px;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        button:hover   { background: #3a3a3a; }
+        button:active  { background: #444; }
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
+        button.on  { background: #1a3a1a; color: #4caf50; }
+        button.off { background: #3a1a1a; color: #f44336; }
+        button.on:hover  { background: #254a25; }
+        button.off:hover { background: #4a2525; }
+
+        #voice-bar {
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #mic-btn {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            background: #1e1e1e;
+            font-size: 1.8rem;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            border: 2px solid #333;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        #mic-btn.listening { background: #1a1a2e; border-color: #5c6bc0; animation: pulse 1.2s infinite; }
+        #mic-btn:disabled  { opacity: 0.3; cursor: not-allowed; }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(92,107,192,0.4); }
+            50%       { box-shadow: 0 0 0 12px rgba(92,107,192,0); }
+        }
+
+        #voice-status { font-size: 0.82rem; color: #555; }
+        #voice-status.heard { color: #fff; }
+    </style>
+</head>
+<body>
+
+<h1>Home Automation</h1>
+<div id="mqtt-status">Connecting...</div>
+
+<div class="rooms">
+    <div class="device">
+        <div>
+            <div class="device-name">Light Switch</div>
+            <div class="device-room">Bedroom</div>
+        </div>
+        <div class="btns">
+            <button class="on"  id="btn-on"  disabled onclick="send('home/bedroom/light/set','ON')">ON</button>
+            <button class="off" id="btn-off" disabled onclick="send('home/bedroom/light/set','OFF')">OFF</button>
+        </div>
+    </div>
+</div>
+
+<div id="voice-bar">
+    <button id="mic-btn" onclick="toggleVoice()">🎤</button>
+    <div id="voice-status">Click mic to start voice control</div>
+</div>
+
+<script>
+    const BROKER_WS = 'ws://192.168.2.38:9001';
+    const mqttStatus = document.getElementById('mqtt-status');
+
+    const client = mqtt.connect(BROKER_WS, { clientId: 'web_' + Math.random().toString(16).slice(2) });
+
+    client.on('connect', () => {
+        mqttStatus.textContent = 'Connected';
+        mqttStatus.className = 'connected';
+        document.querySelectorAll('.btns button').forEach(b => b.disabled = false);
+    });
+
+    client.on('error', () => {
+        mqttStatus.textContent = 'Connection error';
+        mqttStatus.className = 'error';
+    });
+
+    client.on('offline', () => {
+        mqttStatus.textContent = 'Disconnected';
+        mqttStatus.className = 'error';
+        document.querySelectorAll('.btns button').forEach(b => b.disabled = true);
+    });
+
+    function send(topic, payload) {
+        client.publish(topic, payload);
+    }
+
+    // Voice
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const micBtn      = document.getElementById('mic-btn');
+    const voiceStatus = document.getElementById('voice-status');
+
+    if (!SpeechRecognition) {
+        micBtn.disabled = true;
+        voiceStatus.textContent = 'Voice not supported in this browser (use Chrome)';
+    } else {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        let listening = false;
+
+        recognition.onresult = (e) => {
+            const transcript = e.results[e.results.length - 1][0].transcript.trim().toLowerCase();
+            voiceStatus.textContent = `Heard: "${transcript}"`;
+            voiceStatus.className = 'heard';
+
+            if (transcript.includes('on'))  send('home/bedroom/light/set', 'ON');
+            if (transcript.includes('off')) send('home/bedroom/light/set', 'OFF');
+
+            setTimeout(() => { voiceStatus.className = ''; }, 2000);
+        };
+
+        recognition.onerror = (e) => {
+            voiceStatus.textContent = `Error: ${e.error}`;
+        };
+
+        recognition.onend = () => {
+            if (listening) recognition.start();
+        };
+
+        function toggleVoice() {
+            if (!listening) {
+                recognition.start();
+                listening = true;
+                micBtn.classList.add('listening');
+                voiceStatus.textContent = 'Listening...';
+            } else {
+                recognition.stop();
+                listening = false;
+                micBtn.classList.remove('listening');
+                voiceStatus.textContent = 'Click mic to start voice control';
+            }
+        }
+
+        window.toggleVoice = toggleVoice;
+    }
+</script>
+
+</body>
+</html>
