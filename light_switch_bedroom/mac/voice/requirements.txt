@@ -2,3 +2,8 @@ openai-whisper
 sounddevice
 numpy
 paho-mqtt
+google-genai
+ddgs
+requests
+openwakeword
+onnxruntime
