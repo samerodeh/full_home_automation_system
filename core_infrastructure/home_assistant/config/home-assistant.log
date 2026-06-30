@@ -1,4 +1,0 @@
-2026-05-22 21:18:02.677 WARNING (MainThread) [homeassistant.components.mqtt.client] Error returned from MQTT server: The connection was lost.
-2026-05-23 10:00:38.967 ERROR (MainThread) [metno] Access to https://aa015h6buqvih86i1.api.met.no/weatherapi/locationforecast/2.0/complete returned error 'ClientConnectorDNSError'
-2026-05-23 10:00:38.972 ERROR (MainThread) [homeassistant.components.met.coordinator] Error fetching met data: Update of data from the web site failed: 
-2026-05-25 20:33:48.587 WARNING (MainThread) [homeassistant.components.mqtt.client] Error returned from MQTT server: The connection was lost.

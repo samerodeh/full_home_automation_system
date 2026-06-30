@@ -1,0 +1,12 @@
+mac/venv/
+.venv/
+.env
+__pycache__/
+*.pyc
+*.log
+data/
+logs/
+reminders.json
+quran_cache.json
+athan_cache.json
+athan_audio/

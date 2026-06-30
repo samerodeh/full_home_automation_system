@@ -5,3 +5,4 @@ void initServo();
 void startServoOn();
 void startServoOff();
 void updateServoSequence();
+bool isServoIdle();

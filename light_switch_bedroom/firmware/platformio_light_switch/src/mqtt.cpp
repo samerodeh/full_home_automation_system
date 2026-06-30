@@ -3,6 +3,7 @@
 #include "secrets.h"
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include "esp_sleep.h"
 
 static const char* MQTT_CLIENT_ID = "bedroom_light_switch";
 static const char* MQTT_TOPIC     = "home/bedroom/light/set";
@@ -68,4 +69,13 @@ void mqttLoop() {
         connectMQTT();
     }
     mqtt.loop();
+
+    // Enter light sleep while servo is idle — WiFi modem stays on so MQTT
+    // packets wake us instantly. Timer wakeup ensures keep-alive pings fire.
+    if (isServoIdle()) {
+        esp_sleep_enable_wifi_wakeup();
+        esp_sleep_enable_timer_wakeup(10ULL * 1000000ULL);  // 10 s keep-alive fallback
+        esp_light_sleep_start();
+        mqtt.loop();  // process the packet that woke us
+    }
 }
